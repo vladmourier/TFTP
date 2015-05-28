@@ -7,6 +7,8 @@ package tftp;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -57,7 +59,7 @@ public class Client extends ObjetConnecte {
         return new String("\0" + "\2" + fichier + "\0" + "octet" + "\0").getBytes();
     }
 
-    private void envoyer(byte[] array, InetAddress address) throws IOException {
+    public void envoyer(byte[] array, InetAddress address) throws IOException {
         System.out.println("DatagramSocket Client OK");
         this.ia_c = address;
         this.dp = new DatagramPacket(array, array.length, ia_c, 69);
@@ -66,7 +68,7 @@ public class Client extends ObjetConnecte {
         System.out.println("Send Client OK");
     }
 
-    private ArrayList<byte[]> scinder(FileInputStream FIS, int taille) throws IOException {
+    public ArrayList<byte[]> scinder(FileInputStream FIS, int taille) throws IOException {
         int curseur = 0;
         int taille_restante = taille;
         byte[] temp;
@@ -79,13 +81,13 @@ public class Client extends ObjetConnecte {
             }
             temp = new byte[512];
             curseur *= 512;
-            FIS.read(temp, 512, curseur);
+            FIS.read(temp, curseur, 512);
             retour.add(temp);
             taille_restante -= 512;
         }
         return retour;
     }
-/*
+
     public int SendFile(String filename, InetAddress address) throws IOException {
         File fichier;
         FileInputStream FIS;
@@ -128,7 +130,9 @@ public class Client extends ObjetConnecte {
             }
         } else {
             while (count < 3 && result != 0) {
-                byte[] paquet = makeDATA((short) 1, partition);
+                byte[] message = new byte [512];
+                FIS.read(message);
+                byte[] paquet = makeDATA((short) 1, message);
                 envoyer(paquet, address);
                 result = reception(makeACK((short) 1));
                 if (result != 0) {
@@ -141,7 +145,7 @@ public class Client extends ObjetConnecte {
         }
         return 0;
     }
-*/
+
     
     //TODO CHANGER LE TYPE DE RETOUR
     public File receiveFile(String nf_local, String nf_distant, InetAddress ia)
