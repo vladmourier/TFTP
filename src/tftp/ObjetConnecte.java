@@ -20,9 +20,9 @@ public class ObjetConnecte {
     public String name;
     int MAX;
     int port_c;
-    protected InetAddress ia_c;
-    protected DatagramSocket ds;
-    protected DatagramPacket dp;
+    public InetAddress ia_c;
+    public DatagramSocket ds;
+    public DatagramPacket dp;
 
     public ObjetConnecte() throws SocketException {
         this.ds = new DatagramSocket();
