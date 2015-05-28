@@ -56,13 +56,13 @@ public class Client extends ObjetConnecte {
     }
 
     public byte[] makeWRQ(String fichier) {
-        return new String("\0" + "\2" + fichier + "\0" + "octet" + "\0").getBytes();
+        return new String("\0" + "\2" + fichier.substring(3) + "\0" + "octet" + "\0").getBytes();
     }
 
-    public void envoyer(byte[] array, InetAddress address) throws IOException {
+    public void envoyer(byte[] array, InetAddress address, int port) throws IOException {
         System.out.println("DatagramSocket Client OK");
         this.ia_c = address;
-        this.dp = new DatagramPacket(array, array.length, ia_c, 69);
+        this.dp = new DatagramPacket(array, array.length, ia_c, port);
         System.out.println("DatagramPacket Client OK");
         ds.send(dp);
         System.out.println("Send Client OK");
@@ -102,7 +102,7 @@ public class Client extends ObjetConnecte {
         int count = 0, result = 5;
         byte[] WRQ = makeWRQ(filename);
         while (count < 3 && result != 0) {
-            envoyer(WRQ, address);
+            envoyer(WRQ, address, 69);
             result = reception(this.makeACK((short) 0));
             if (result != 0) {
                 ++count;
@@ -118,7 +118,7 @@ public class Client extends ObjetConnecte {
             for (byte[] partition : partitions) {
                 while (count < 3 && result != 0) {
                     byte[] paquet = makeDATA((short) i, partition);
-                    envoyer(paquet, address);
+                    envoyer(paquet, address, this.dp.getPort());
                     result = reception(makeACK((short) i));
                     if (result != 0) {
                         ++count;
@@ -130,10 +130,10 @@ public class Client extends ObjetConnecte {
             }
         } else {
             while (count < 3 && result != 0) {
-                byte[] message = new byte [512];
+                byte[] message = new byte[512];
                 FIS.read(message);
                 byte[] paquet = makeDATA((short) 1, message);
-                envoyer(paquet, address);
+                envoyer(paquet, address, dp.getPort());
                 result = reception(makeACK((short) 1));
                 if (result != 0) {
                     ++count;
@@ -146,10 +146,8 @@ public class Client extends ObjetConnecte {
         return 0;
     }
 
-    
     //TODO CHANGER LE TYPE DE RETOUR
-    public File receiveFile(String nf_local, String nf_distant, InetAddress ia)
-    {
+    public File receiveFile(String nf_local, String nf_distant, InetAddress ia) {
         try {
             //Le fichier qui sera renvoyer en fin de fonction
             File f = new File(nf_local);
@@ -163,52 +161,48 @@ public class Client extends ObjetConnecte {
             boolean complet = false;
             //Le buffer qui permet de renvoyer des ACK et le RRQ
             byte[] buffer;
-            
-            
+
             //Préparation et envoie de la requête de demarrage
             buffer = makeRRQ((short) data, nf_distant);
             dp = new DatagramPacket(buffer, buffer.length, ia, 69);
             ds.send(dp);
-            
+
             //Reception du fichier
-            while(complet == false)
-            {
+            while (complet == false) {
                 ds.receive(dp);
                 //Recupération de l'opcode
                 short opcode = dp.getData()[0];
                 opcode <<= 8;
                 opcode += dp.getData()[1];
                 System.out.println(opcode);
-                
+
                 //L'opcode 3 correspond à l'envoie de data depuis le serveur, on va donc les récupérer
-                if(opcode == 3)
-                {
+                if (opcode == 3) {
                     short numblock = dp.getData()[0];
                     opcode <<= 8;
                     opcode += dp.getData()[1];
-                    if (numblock == data)
-                    {
+                    if (numblock == data) {
                         data++;
-                        for (int i = 4; i < dp.getLength(); i++)
-                        {
+                        for (int i = 4; i < dp.getLength(); i++) {
                             input.write(dp.getData()[i]);
                             input.flush();
                         }
-                        if(dp.getLength() < 512) complet = true;
+                        if (dp.getLength() < 512) {
+                            complet = true;
+                        }
                     }
-                    buffer = makeACK((short)data);
+                    buffer = makeACK((short) data);
                     dp.setData(buffer);
                     dp.setLength(buffer.length);
                     ds.send(dp);
                 }
             }
-            
+
             //Ajouter une tempo, fermer le socket
-            
             input.close();
             ds.close();
             return f;
-            
+
         } catch (SocketException ex) {
             Logger.getLogger(ObjetConnecte.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnsupportedEncodingException ex) {
@@ -218,7 +212,7 @@ public class Client extends ObjetConnecte {
         }
         return null;
     }
-    
+
     /**
      *
      */
@@ -236,8 +230,9 @@ public class Client extends ObjetConnecte {
             System.out.println("J'attends un envoi");
             byte[] buffer = new byte[this.MAX];
             this.dp = new DatagramPacket(buffer, buffer.length);
-            this.ds.setSoTimeout(10);
+            this.ds.setSoTimeout(1000);
             this.ds.receive(this.dp);
+            System.out.println("reçu");
         } catch (SocketException s) {
             return 1;
         }
@@ -247,15 +242,13 @@ public class Client extends ObjetConnecte {
             return -1;
         }
     }
-    
-    
-// TODO : concat DATA[2] et DATA[3]
-	public short getBloc(Byte[] DATA) {
-		return DATA[2].shortValue();
 
-	}
-        
-        
+// TODO : concat DATA[2] et DATA[3]
+    public short getBloc(Byte[] DATA) {
+        return DATA[2].shortValue();
+
+    }
+
 //        public void ReceiveFile(String ficherLocal, String fichierDistant, InetAddress adresseDistante) {
 //
 //		byte[] rrq = new String("RRQ").getBytes();
@@ -277,5 +270,4 @@ public class Client extends ObjetConnecte {
 //			}
 //		}
 //	}
-        
 }
