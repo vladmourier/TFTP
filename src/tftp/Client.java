@@ -7,6 +7,8 @@ package tftp;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -16,6 +18,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,7 +59,7 @@ public class Client extends ObjetConnecte {
         return new String("\0" + "\2" + fichier + "\0" + "octet" + "\0").getBytes();
     }
 
-    private void envoyer(byte[] array, InetAddress address) throws IOException {
+    public void envoyer(byte[] array, InetAddress address) throws IOException {
         System.out.println("DatagramSocket Client OK");
         this.ia_c = address;
         this.dp = new DatagramPacket(array, array.length, ia_c, 69);
@@ -65,52 +68,43 @@ public class Client extends ObjetConnecte {
         System.out.println("Send Client OK");
     }
 
-    private ArrayList<byte[]> scinder(byte[] fichier, int taille) {
-        int restant = fichier.length;
-        byte[] temp = new byte[taille];
-        int curseur = 0, position;
+    public ArrayList<byte[]> scinder(FileInputStream FIS, int taille) throws IOException {
+        int curseur = 0;
+        int taille_restante = taille;
+        byte[] temp;
         ArrayList<byte[]> retour = new ArrayList<>();
-        if (fichier.length > taille) {
-            curseur = 0;
-            temp = new byte[taille];
-            while (curseur < fichier.length && restant >= taille) {
-                position = 0;
-                while (position != taille - 1 || curseur < fichier.length) {
-                    position = curseur % taille;
-                    temp[position] = fichier[curseur];
-                    curseur++;
-                    restant--;
-                }
+        while (curseur < taille_restante) {
+            if (taille <= 512) {
+                temp = new byte[taille];
+                FIS.read(temp);
                 retour.add(temp);
             }
+            temp = new byte[512];
+            curseur *= 512;
+            FIS.read(temp, curseur, 512);
+            retour.add(temp);
+            taille_restante -= 512;
         }
-        if (restant <= taille) {
-            for (int i = 0; i < restant; i++) {
-                position = curseur % taille;
-                temp[position] = fichier[curseur];
-                curseur++;
-            }
-        }
-
         return retour;
     }
-/*
+
     public int SendFile(String filename, InetAddress address) throws IOException {
         File fichier;
-        FileInputStream fic;
+        FileInputStream FIS;
+        byte[] fic;
         try {
             fichier = new File(filename);
-            fic = new FileInputStream(filename);
+            FIS = new FileInputStream(filename);
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
             return -1;
         }
         int count = 0, result = 5;
         byte[] WRQ = makeWRQ(filename);
-        while (count < 3 || result == 0) {
+        while (count < 3 && result != 0) {
             envoyer(WRQ, address);
-            result = recevoir();
-            if (result == 1) {
+            result = reception(this.makeACK((short) 0));
+            if (result != 0) {
                 ++count;
             }
         }
@@ -119,12 +113,14 @@ public class Client extends ObjetConnecte {
         }
         count = 0;
         if (fichier.getTotalSpace() > 512) {
-            ArrayList<byte[]> partitions = scinder(fic, 512);
+            int i = 1;
+            ArrayList<byte[]> partitions = scinder(FIS, 512);
             for (byte[] partition : partitions) {
-                while (count < 3 || result == 0) {
-                    envoyer(partition, address);
-                    result = recevoir();
-                    if (result == 1) {
+                while (count < 3 && result != 0) {
+                    byte[] paquet = makeDATA((short) i, partition);
+                    envoyer(paquet, address);
+                    result = reception(makeACK((short) i));
+                    if (result != 0) {
                         ++count;
                     }
                 }
@@ -133,10 +129,13 @@ public class Client extends ObjetConnecte {
                 }
             }
         } else {
-            while (count < 3 || result == 0) {
-                envoyer(partition, address);
-                result = recevoir();
-                if (result == 1) {
+            while (count < 3 && result != 0) {
+                byte[] message = new byte [512];
+                FIS.read(message);
+                byte[] paquet = makeDATA((short) 1, message);
+                envoyer(paquet, address);
+                result = reception(makeACK((short) 1));
+                if (result != 0) {
                     ++count;
                 }
             }
@@ -146,7 +145,7 @@ public class Client extends ObjetConnecte {
         }
         return 0;
     }
-*/
+
     
     //TODO CHANGER LE TYPE DE RETOUR
     public File receiveFile(String nf_local, String nf_distant, InetAddress ia)
@@ -210,7 +209,7 @@ public class Client extends ObjetConnecte {
             }
             
             //Ajouter une tempo, fermer le socket
-            
+
             input.close();
             ds.close();
             return f;
@@ -237,16 +236,20 @@ public class Client extends ObjetConnecte {
         System.out.println("Send Client OK");
     }
 
-    public boolean reception() throws SocketException, IOException {
-        while (true) {
+    public int reception(byte[] attendu) throws SocketException, IOException {
+        try {
             System.out.println("J'attends un envoi");
             byte[] buffer = new byte[this.MAX];
             this.dp = new DatagramPacket(buffer, buffer.length);
+            this.ds.setSoTimeout(10);
             this.ds.receive(this.dp);
-            if (this.dp.getLength() != 0) {
-                System.out.println("recu : " + new String(new String(this.dp.getData()).substring(0, this.dp.getData().length)));
-                return true;
-            }
+        } catch (SocketException s) {
+            return 1;
+        }
+        if (Arrays.equals(this.dp.getData(), attendu)) {
+            return 0;
+        } else {
+            return -1;
         }
     }
     
