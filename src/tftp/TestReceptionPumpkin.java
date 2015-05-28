@@ -3,29 +3,34 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package tftp;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static tftp.TestReceptionPumpkin.IP_Serveur;
 
 /**
  *
- * @author Vladimir
+ * @author p1206512
  */
-public class TFTP {
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) throws SocketException {
+public class TestReceptionPumpkin extends Client{
+    
+    protected static String IP_Serveur = "localhost";
+    
+    public TestReceptionPumpkin() throws SocketException
+    {
+        super();
+    }
+    
+    public static void main(String[] args) throws UnsupportedEncodingException, SocketException {
         File f;
         String serveur = "test.txt";
-        String local = "C:\\Users\\Adrien_portable\\Desktop\\test4.txt";
+        String local = "C:\\Users\\Adrien_portable\\Desktop\\test1.txt";
         InetAddress ia = null;
         TestReceptionPumpkin test = new TestReceptionPumpkin();
         try {
@@ -36,6 +41,5 @@ public class TFTP {
         System.out.println("On va lancer la fonction de reception du fichier");
         f = test.receiveFile(local, serveur, ia);
         System.out.println("Fichier reçu");
-        }
-    
+    }
 }

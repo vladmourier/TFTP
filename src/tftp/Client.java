@@ -5,9 +5,9 @@
  */
 package tftp;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
@@ -94,7 +94,7 @@ public class Client extends ObjetConnecte {
 
         return retour;
     }
-
+/*
     public int SendFile(String filename, InetAddress address) throws IOException {
         File fichier;
         FileInputStream fic;
@@ -146,7 +146,78 @@ public class Client extends ObjetConnecte {
         }
         return 0;
     }
-
+*/
+    
+    //TODO CHANGER LE TYPE DE RETOUR
+    public File receiveFile(String nf_local, String nf_distant, InetAddress ia)
+    {
+        try {
+            //Le fichier qui sera renvoyer en fin de fonction
+            File f = new File(nf_local);
+            //L'objet fichier dans lequel on peut écrire
+            FileWriter fichier = new FileWriter(f, true);
+            //L'objet buffer qui gère les donnés
+            BufferedWriter input = new BufferedWriter(fichier);
+            //Le compteur de data reçu, sert pour les numéros de packets
+            short data = 1;
+            //Le booleen de sortie de boucle, un test le passe a faux si le fichier est complet, on n'attend plus de réception
+            boolean complet = false;
+            //Le buffer qui permet de renvoyer des ACK et le RRQ
+            byte[] buffer;
+            
+            
+            //Préparation et envoie de la requête de demarrage
+            buffer = makeRRQ((short) data, nf_distant);
+            dp = new DatagramPacket(buffer, buffer.length, ia, 69);
+            ds.send(dp);
+            
+            //Reception du fichier
+            while(complet == false)
+            {
+                ds.receive(dp);
+                short opcode = dp.getData()[0];
+                opcode <<= 8;
+                opcode += dp.getData()[1];
+                System.out.println(opcode);
+                
+                if(opcode == 3)
+                {
+                    short numblock = dp.getData()[0];
+                    opcode <<= 8;
+                    opcode += dp.getData()[1];
+                    if (numblock == data)
+                    {
+                        data++;
+                        for (int i = 4; i < dp.getLength(); i++)
+                        {
+                            input.write(dp.getData()[i]);
+                            input.flush();
+                        }
+                        if(dp.getLength() < 512) complet = true;
+                    }
+                    buffer = makeACK((short)data);
+                    dp.setData(buffer);
+                    dp.setLength(buffer.length);
+                    ds.send(dp);
+                }
+            }
+            
+            //Ajouter une tempo, fermer le socket
+            
+            input.close();
+            ds.close();
+            return f;
+            
+        } catch (SocketException ex) {
+            Logger.getLogger(ObjetConnecte.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(ObjetConnecte.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(ObjetConnecte.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
     /**
      *
      */
