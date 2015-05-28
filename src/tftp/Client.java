@@ -175,11 +175,13 @@ public class Client extends ObjetConnecte {
             while(complet == false)
             {
                 ds.receive(dp);
+                //Recupération de l'opcode
                 short opcode = dp.getData()[0];
                 opcode <<= 8;
                 opcode += dp.getData()[1];
                 System.out.println(opcode);
                 
+                //L'opcode 3 correspond à l'envoie de data depuis le serveur, on va donc les récupérer
                 if(opcode == 3)
                 {
                     short numblock = dp.getData()[0];
