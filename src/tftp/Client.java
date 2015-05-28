@@ -170,4 +170,35 @@ public class Client extends ObjetConnecte {
             return -1;
         }
     }
+    
+    
+// TODO : concat DATA[2] et DATA[3]
+	public short getBloc(Byte[] DATA) {
+		return DATA[2].shortValue();
+
+	}
+        
+        
+        public void ReceiveFile(String ficherLocal, String fichierDistant, InetAddress adresseDistante) {
+
+		byte[] rrq = new String("RRQ").getBytes();
+		byte[] ack = new String("\0\1").getBytes();
+		this.envoyer(rrq,  adresseDistante);
+		FileOutputStream fichier = new FileOutputStream (ficherLocal); // crée un fichier à l'emplacement de fichierLocal
+		int compteur = 1;
+		while (true) {
+			byte[] reception = reception();
+			if (reception.length != 0) { // Si succès
+				this.envoyer(this.makeACK(bloc), adresseDistante); // TODO
+				if (compteur == this.DATA) {
+					compteur++
+					fichier.write(datas)
+				}
+				if (datas.taille < 512) {
+					break
+				}
+			}
+		}
+	}
+        
 }
