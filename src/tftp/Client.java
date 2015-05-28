@@ -7,6 +7,7 @@ package tftp;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -200,7 +201,7 @@ public class Client extends ObjetConnecte {
             }
             
             //Ajouter une tempo, fermer le socket
-            
+
             input.close();
             ds.close();
             return f;
