@@ -68,18 +68,20 @@ public class Client extends ObjetConnecte {
 
     private ArrayList<byte[]> scinder(FileInputStream FIS, int taille) throws IOException {
         int curseur = 0;
+        int taille_restante = taille;
         byte[] temp;
         ArrayList<byte[]> retour = new ArrayList<>();
-        if(taille<=512)
-        {
-            temp = new byte[taille];
-            FIS.read(temp);
+        while (curseur < taille_restante) {
+            if (taille <= 512) {
+                temp = new byte[taille];
+                FIS.read(temp);
+                retour.add(temp);
+            }
+            temp = new byte[512];
+            curseur *= 512;
+            FIS.read(temp, 512, curseur);
             retour.add(temp);
-        }
-        while(curseur < taille)
-        {
-        temp = new byte[512];
-        FIS.read(temp, 512, curseur*512);
+            taille_restante -= 512;
         }
         return retour;
     }
