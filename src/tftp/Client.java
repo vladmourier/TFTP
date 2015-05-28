@@ -174,33 +174,38 @@ public class Client extends ObjetConnecte {
             //Reception du fichier
             while(complet == false)
             {
-                ds.receive(dp);
+                DatagramPacket dpr = new DatagramPacket(new byte[516], 516);
+                ds.receive(dpr);
                 //Recupération de l'opcode
-                short opcode = dp.getData()[0];
+                short opcode = dpr.getData()[0];
                 opcode <<= 8;
-                opcode += dp.getData()[1];
+                opcode += dpr.getData()[1];
                 System.out.println(opcode);
                 
                 //L'opcode 3 correspond à l'envoie de data depuis le serveur, on va donc les récupérer
                 if(opcode == 3)
                 {
-                    short numblock = dp.getData()[0];
-                    opcode <<= 8;
-                    opcode += dp.getData()[1];
+                    //Recupération du numéro de packet
+                    short numblock = dpr.getData()[2];
+                    numblock <<= 8;
+                    numblock += dpr.getData()[3];
+                    System.out.println(numblock);
+                    
+                    //La variable globale data stock le numéro de packet attendu
                     if (numblock == data)
                     {
                         data++;
-                        for (int i = 4; i < dp.getLength(); i++)
+                        //On récupère les données du 4ème byte jusqu'à la fin du datagrampacket
+                        for (int i = 4; i < dpr.getLength(); i++)
                         {
-                            input.write(dp.getData()[i]);
+                            input.write(dpr.getData()[i]);
                             input.flush();
                         }
-                        if(dp.getLength() < 512) complet = true;
+                        if(dpr.getData().length < 516) complet = true; //problèm de longueur de Datagrampacket, il fait toujours 516 comme il est fixé à cette taille, donc ça s'rrete jamais ...
                     }
                     buffer = makeACK((short)data);
-                    dp.setData(buffer);
-                    dp.setLength(buffer.length);
-                    ds.send(dp);
+                    dpr = new DatagramPacket(buffer, buffer.length, dp.getSocketAddress());
+                    ds.send(dpr);
                 }
             }
             
@@ -246,33 +251,33 @@ public class Client extends ObjetConnecte {
     }
     
     
-// TODO : concat DATA[2] et DATA[3]
-	public short getBloc(Byte[] DATA) {
-		return DATA[2].shortValue();
-
-	}
+//// TODO : concat DATA[2] et DATA[3]
+//	public short getBloc(Byte[] DATA) {
+//		return DATA[2].shortValue();
+//
+//	}
         
         
-        public void ReceiveFile(String ficherLocal, String fichierDistant, InetAddress adresseDistante) {
-
-		byte[] rrq = new String("RRQ").getBytes();
-		byte[] ack = new String("\0\1").getBytes();
-		this.envoyer(rrq,  adresseDistante);
-		FileOutputStream fichier = new FileOutputStream (ficherLocal); // crée un fichier à l'emplacement de fichierLocal
-		int compteur = 1;
-		while (true) {
-			byte[] reception = reception();
-			if (reception.length != 0) { // Si succès
-				this.envoyer(this.makeACK(bloc), adresseDistante); // TODO
-				if (compteur == this.DATA) {
-					compteur++
-					fichier.write(datas)
-				}
-				if (datas.taille < 512) {
-					break
-				}
-			}
-		}
-	}
+//        public void ReceiveFile(String ficherLocal, String fichierDistant, InetAddress adresseDistante) {
+//
+//		byte[] rrq = new String("RRQ").getBytes();
+//		byte[] ack = new String("\0\1").getBytes();
+//		this.envoyer(rrq,  adresseDistante);
+//		FileOutputStream fichier = new FileOutputStream (ficherLocal); // crée un fichier à l'emplacement de fichierLocal
+//		int compteur = 1;
+//		while (true) {
+//			byte[] reception = reception();
+//			if (reception.length != 0) { // Si succès
+//				this.envoyer(this.makeACK(bloc), adresseDistante); // TODO
+//				if (compteur == this.DATA) {
+//					compteur++
+//					fichier.write(datas)
+//				}
+//				if (datas.taille < 512) {
+//					break
+//				}
+//			}
+//		}
+//	}
         
 }

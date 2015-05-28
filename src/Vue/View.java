@@ -31,11 +31,11 @@ public class View extends JFrame{
     JButton recevoir = new JButton("Recevoir fichier");
     JTextField txt_adress = new JTextField();
     JLabel lbl_adress = new JLabel("Adresse du serveur");
-    JLabel lbl_fichier = new JLabel("Fichier à envoyer");
+    JLabel lbl_fichier = new JLabel("Fichier ï¿½ envoyer");
     JLabel lbl_chem = new JLabel("Chemin");
     JLabel lbl_chemin = new JLabel();
     JButton parcourir = new JButton("Parcourir");
-    JLabel lbl_adressDistant = new JLabel("Fichier à recevoir");
+    JLabel lbl_adressDistant = new JLabel("Fichier ï¿½ recevoir");
     JTextField txt_adressDistant = new JTextField();
     JLabel lbl_erreur = new JLabel();
     
@@ -83,7 +83,7 @@ public class View extends JFrame{
     
 	  class BoutonParcourir implements ActionListener{
 	    public void actionPerformed(ActionEvent arg0) {
-	    	// création de la boîte de dialogue
+	    	// creation de la boite de dialogue
 	        JFileChooser dialogue = new JFileChooser();
 	         
 	        // affichage
@@ -100,7 +100,7 @@ public class View extends JFrame{
 	    		lbl_erreur.setText("Envoi du fichier");
 	    		//client.SendFile(fichierSelectionne.toString(), txt_adress.toString());
 	    	}
-	    	else { lbl_erreur.setText("Veuillez renseigner le fichier à envoyer et l'adresse"); }
+	    	else { lbl_erreur.setText("Veuillez renseigner le fichier ï¿½ envoyer et l'adresse"); }
 	    }
 	  }
 	      
@@ -110,7 +110,7 @@ public class View extends JFrame{
 	    		lbl_erreur.setText("Reception du fichier");
 	    		//client.ReceiveFile(txt_adressDistant.toString(), txt_adressDistant.toString(), txt_adress.toString());
 	    	}
-	    	else { lbl_erreur.setText("Veuillez renseigner le fichier à recevoir et l'adresse"); }
+	    	else { lbl_erreur.setText("Veuillez renseigner le fichier ï¿½ recevoir et l'adresse"); }
 	    }
 	  }      
 }
