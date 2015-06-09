@@ -15,9 +15,10 @@ import java.net.UnknownHostException;
  * @author Vladimir
  */
 public class TestEnvoiFichier {
-        public static void main(String[] args) throws SocketException, UnknownHostException, IOException {
-            Client c = new Client();
-            c.SendFile("V:\\essai.txt", InetAddress.getByName("134.214.117.60"));
-        }
+
+    public static void main(String[] args) throws SocketException, UnknownHostException, IOException {
+        Client c = new Client();
+        System.out.println(c.SendFile("essai.txt", InetAddress.getByName("localhost")));
+    }
 
 }

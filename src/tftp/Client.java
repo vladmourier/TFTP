@@ -6,6 +6,8 @@
 package tftp;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,7 +18,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -44,11 +46,33 @@ public class Client extends ObjetConnecte {
     }
 
     public byte[] makeACK(short bloc) {
-        return new String("\0" + "\4" + bloc).getBytes();
+        ByteArrayOutputStream dataStream = new ByteArrayOutputStream(4);
+        DataOutputStream dataWriter = new DataOutputStream(dataStream);
+        try {
+            dataWriter.writeByte(0);
+            dataWriter.writeByte(4);
+            dataWriter.writeShort(bloc);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.err.println(dataWriter.toString());
+        }
+        return dataStream.toByteArray();
     }
 
     public byte[] makeDATA(short bloc, byte[] datas) {
-        return new String("\0" + "\3" + bloc + datas).getBytes();
+        ByteArrayOutputStream dataStream = new ByteArrayOutputStream(4 + datas.length);
+        DataOutputStream dataWriter;
+        dataWriter = new DataOutputStream(dataStream);
+        try {
+            dataWriter.writeByte(0);
+            dataWriter.writeByte(3);
+            dataWriter.writeShort(bloc);
+            dataWriter.write(datas);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.err.println(dataWriter.toString());
+        }
+        return dataStream.toByteArray();
     }
 
     public byte[] makeRRQ(short bloc, String fichier) {
@@ -56,97 +80,129 @@ public class Client extends ObjetConnecte {
     }
 
     public byte[] makeWRQ(String fichier) {
-        return new String("\0" + "\2" + fichier.substring(3) + "\0" + "octet" + "\0").getBytes();
+        return new String("\0" + "\2" + fichier + "\0" + "octet" + "\0").getBytes();
     }
 
     public void envoyer(byte[] array, InetAddress address, int port) throws IOException {
-        System.out.println("DatagramSocket Client OK");
         this.ia_c = address;
         this.dp = new DatagramPacket(array, array.length, ia_c, port);
-        System.out.println("DatagramPacket Client OK");
         ds.send(dp);
-        System.out.println("Send Client OK");
     }
 
     public ArrayList<byte[]> scinder(FileInputStream FIS, int taille) throws IOException {
-        int curseur = 0;
-        int taille_restante = taille;
-        byte[] temp;
+        System.out.println("fonction scinder ; availables : " + FIS.available());
+        int offset = 0, availables = FIS.available();
         ArrayList<byte[]> retour = new ArrayList<>();
-        while (curseur < taille_restante) {
-            if (taille <= 512) {
-                temp = new byte[taille];
-                FIS.read(temp);
-                retour.add(temp);
+        byte[] buffer;
+        if (availables >= taille) {
+            while (FIS.available() >= taille) {
+                System.out.println("offset = " + offset + " ; offset+taille =" + (offset+taille) + " ; " + " ; " + "availables : " + FIS.available());
+                if (availables - offset <= taille) {
+                    buffer=new byte[availables - offset];
+                    FIS.read(buffer);
+                    retour.add(buffer);
+                } else {
+                    buffer = new byte[taille];
+                    FIS.read(buffer);
+                    retour.add(buffer);
+                    offset += taille;
+                }
+                System.out.println("Ajout d'une partition de taille : " + buffer.length );
             }
-            temp = new byte[512];
-            curseur *= 512;
-            FIS.read(temp, curseur, 512);
-            retour.add(temp);
-            taille_restante -= 512;
         }
+            buffer = new byte[FIS.available()];
+            FIS.read(buffer);
+            retour.add(buffer);
+
         return retour;
     }
 
+    public short getOpCode() {
+        short opcode = this.dp.getData()[0];
+        opcode <<= 8;
+        opcode += this.dp.getData()[1];
+        return opcode;
+    }
+
     public int SendFile(String filename, InetAddress address) throws IOException {
-        File fichier;
+        int port_s = 0;
+        this.ds.setSoTimeout(30000);
+        byte[] paquet = null;//Le buffer permettant de recevoir les paquets
+        File fichier_local;
         FileInputStream FIS;
-        byte[] fic;
+        ArrayList<byte[]> partitions = new ArrayList<>();
+        short bloc = 0, essais = 1;
+        boolean envoye = false;
+//Récupération du fichier
         try {
-            fichier = new File(filename);
-            FIS = new FileInputStream(filename);
+            fichier_local = new File(filename);
+            FIS = new FileInputStream(fichier_local);
+            System.out.println("FIS.available() = " + FIS.available());
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
             return -1;
         }
-        int count = 0, result = 5;
-        byte[] WRQ = makeWRQ(filename);
-        while (count < 3 && result != 0) {
-            envoyer(WRQ, address, 69);
-            result = reception(this.makeACK((short) 0));
-            if (result != 0) {
-                ++count;
+//Envoi du WRQ
+        while (essais <= 3 && envoye == false) {
+            System.out.println("envoi du WRQ");
+            paquet = makeWRQ(filename);
+            this.ds.send(this.dp = new DatagramPacket(paquet, paquet.length, address, 69));
+            paquet = new byte[4];
+            this.dp = new DatagramPacket(paquet, paquet.length);
+            this.ds.receive(dp);
+            if (this.getOpCode() == 4 && getBloc(dp.getData()) == bloc) {
+                envoye = true;
+                port_s = this.dp.getPort();
             }
+            essais += 1;
         }
-        if (count == 3) {
+        if (essais >= 3) {
+            System.out.println("essais = " + essais);
             return 1;
         }
-        count = 0;
-        if (fichier.getTotalSpace() > 512) {
-            int i = 1;
-            ArrayList<byte[]> partitions = scinder(FIS, 512);
+        ++bloc;
+        essais = 1;
+        envoye = false;
+//Recupération de l'opcode
+        if (this.getOpCode() == (short) 4) {
+//Envoi des données
+            partitions = this.scinder(FIS, 512);
+            System.out.println("fichier découpé en " + partitions.size() + " partitions");
             for (byte[] partition : partitions) {
-                while (count < 3 && result != 0) {
-                    byte[] paquet = makeDATA((short) i, partition);
-                    envoyer(paquet, address, this.dp.getPort());
-                    result = reception(makeACK((short) i));
-                    if (result != 0) {
-                        ++count;
+                System.out.println("/////////////////Partition");
+                envoye=false;
+                while (essais <= 3 && envoye == false) {
+                    envoye = false;
+                    System.out.println("j'envoie un paquet de : " + partition.length + " octets");
+                    paquet = this.makeDATA(bloc, partition);
+                    this.dp = new DatagramPacket(paquet, paquet.length, InetAddress.getByName("localhost"), port_s);
+                    this.ds.send(this.dp);
+                    paquet = new byte[4];
+                    this.dp = new DatagramPacket(paquet, paquet.length);
+                    this.ds.receive(dp);
+                    if (this.getOpCode() == 4 && getBloc(dp.getData()) == bloc) {
+                        envoye = true;
+                        System.out.println("Paquet " + bloc + " OK");
                     }
+                    essais += 1;
                 }
-                if (count == 3) {
+                if (essais >= 3) {
                     return 2;
                 }
+                ++bloc;
+                essais = 1;
             }
+            System.out.println("Fin de la fonction");
         } else {
-            while (count < 3 && result != 0) {
-                byte[] message = new byte[512];
-                FIS.read(message);
-                byte[] paquet = makeDATA((short) 1, message);
-                envoyer(paquet, address, dp.getPort());
-                result = reception(makeACK((short) 1));
-                if (result != 0) {
-                    ++count;
-                }
-            }
-            if (count == 3) {
-                return 2;
-            }
+            System.out.println("mauvais opcode recu");
         }
+        //Ajouter une tempo, fermer le socket
+        FIS.close();
+        ds.close();
         return 0;
     }
 
-    //TODO CHANGER LE TYPE DE RETOUR
+//TODO CHANGER LE TYPE DE RETOUR
     public File receiveFile(String nf_local, String nf_distant, InetAddress ia) {
         try {
             //Le fichier qui sera renvoyer en fin de fonction
@@ -204,70 +260,22 @@ public class Client extends ObjetConnecte {
             return f;
 
         } catch (SocketException ex) {
-            Logger.getLogger(ObjetConnecte.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObjetConnecte.class
+                    .getName()).log(Level.SEVERE, null, ex);
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(ObjetConnecte.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObjetConnecte.class
+                    .getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
-            Logger.getLogger(ObjetConnecte.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ObjetConnecte.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
         return null;
     }
 
-    /**
-     *
-     */
-    public void communication(String s, int port, InetAddress server) throws SocketException, UnsupportedEncodingException, UnknownHostException, IOException {
-        System.out.println("DatagramSocket Client OK");
-        this.ia_c = InetAddress.getByName("localhost");
-        this.dp = new DatagramPacket(s.getBytes("ascii"), s.length(), ia_c, port);
-        System.out.println("DatagramPacket Client OK");
-        ds.send(dp);
-        System.out.println("Send Client OK");
-    }
-
-    public int reception(byte[] attendu) throws SocketException, IOException {
-        try {
-            System.out.println("J'attends un envoi");
-            byte[] buffer = new byte[this.MAX];
-            this.dp = new DatagramPacket(buffer, buffer.length);
-            this.ds.setSoTimeout(1000);
-            this.ds.receive(this.dp);
-            System.out.println("reçu");
-        } catch (SocketException s) {
-            return 1;
-        }
-        if (Arrays.equals(this.dp.getData(), attendu)) {
-            return 0;
-        } else {
-            return -1;
-        }
-    }
-
 // TODO : concat DATA[2] et DATA[3]
-    public short getBloc(Byte[] DATA) {
-        return DATA[2].shortValue();
-
+    public short getBloc(byte[] DATA) {
+        ByteBuffer buff = ByteBuffer.wrap(DATA);
+        buff.getShort();
+        return buff.getShort();
     }
-
-//        public void ReceiveFile(String ficherLocal, String fichierDistant, InetAddress adresseDistante) {
-//
-//		byte[] rrq = new String("RRQ").getBytes();
-//		byte[] ack = new String("\0\1").getBytes();
-//		this.envoyer(rrq,  adresseDistante);
-//		FileOutputStream fichier = new FileOutputStream (ficherLocal); // crée un fichier à l'emplacement de fichierLocal
-//		int compteur = 1;
-//		while (true) {
-//			byte[] reception = reception();
-//			if (reception.length != 0) { // Si succès
-//				this.envoyer(this.makeACK(bloc), adresseDistante); // TODO
-//				if (compteur == this.DATA) {
-//					compteur++
-//					fichier.write(datas)
-//				}
-//				if (datas.taille < 512) {
-//					break
-//				}
-//			}
-//		}
-//	}
 }
