@@ -25,7 +25,7 @@ public class TFTP {
     public static void main(String[] args) throws SocketException {
         File f;
         String serveur = "test.txt";
-        String local = "C:\\Users\\Adrien_portable\\Desktop\\test4.txt";
+        String local = "C:\\Users\\Transports Vivarais\\Desktop\\aa.txt";
         InetAddress ia = null;
         TestReceptionPumpkin test = new TestReceptionPumpkin();
         try {

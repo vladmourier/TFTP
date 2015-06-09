@@ -208,8 +208,10 @@ public class Client extends ObjetConnecte {
                 }
             }
             
-            //Ajouter une tempo, fermer le socket
-
+            //Temporisation
+            ds.setSoTimeout(30000);
+            
+            
             input.close();
             ds.close();
             return f;
