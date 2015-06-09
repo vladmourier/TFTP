@@ -30,7 +30,7 @@ public class TestReceptionPumpkin extends Client{
     public static void main(String[] args) throws UnsupportedEncodingException, SocketException {
         File f;
         String serveur = "test.txt";
-        String local = "C:\\Users\\Adrien_portable\\Desktop\\test1.txt";
+        String local = "C:\\Users\\Transports Vivarais\\Desktop\\aa.txt";
         InetAddress ia = null;
         TestReceptionPumpkin test = new TestReceptionPumpkin();
         try {

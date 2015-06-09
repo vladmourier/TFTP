@@ -19,7 +19,7 @@ public class Main {
 					View fenetre = new View(c);
 					fenetre.setVisible(true);
 				} catch (SocketException e) {
-					System.out.println("Erreur lors de la création du client");
+					System.out.println("Erreur lors de la creation du client");
 				}
 				
 			}
@@ -30,7 +30,7 @@ public class Main {
 			InetAddress adr = InetAddress.getByName("127.0.0.1");
 			c.envoyer(c.makeRRQ("cas1"), adr);
 		} catch (SocketException e) {
-			System.out.println("Erreur lors de la création du client");
+			System.out.println("Erreur lors de la creation du client");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}*/
