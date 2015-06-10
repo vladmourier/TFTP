@@ -253,7 +253,7 @@ public class Client extends ObjetConnecte {
                             input.write(dpr.getData()[i]);
                             input.flush();
                         }
-                        if(dpr.getData().length < 516) complet = true; //problèm de longueur de Datagrampacket, il fait toujours 516 comme il est fixé à cette taille, donc ça s'rrete jamais ...
+                        if(dpr.getLength() < 516) complet = true; //problèm de longueur de Datagrampacket, il fait toujours 516 comme il est fixé à cette taille, donc ça s'rrete jamais ...
                     }
                     buffer = makeACK((short)data);
                     dpr = new DatagramPacket(buffer, buffer.length, dp.getSocketAddress());
