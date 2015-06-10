@@ -281,52 +281,11 @@ public class Client extends ObjetConnecte {
         }
         return null;
     }
-
-    public int reception(byte[] attendu) throws SocketException, IOException {
-        try {
-            System.out.println("J'attends un envoi");
-            byte[] buffer = new byte[this.MAX];
-            this.dp = new DatagramPacket(buffer, buffer.length);
-            this.ds.setSoTimeout(10);
-            this.ds.receive(this.dp);
-        } catch (SocketException s) {
-            return 1;
-        }
-        if (Arrays.equals(this.dp.getData(), attendu)) {
-            return 0;
-        } else {
-            return -1;
-        }
+    
+    
+    public short getBloc(byte[] DATA) {
+        ByteBuffer buff = ByteBuffer.wrap(DATA);
+        buff.getShort();
+        return buff.getShort();
     }
-    
-    
-//// TODO : concat DATA[2] et DATA[3]
-//	public short getBloc(Byte[] DATA) {
-//		return DATA[2].shortValue();
-//
-//	}
-        
-        
-//        public void ReceiveFile(String ficherLocal, String fichierDistant, InetAddress adresseDistante) {
-//
-//		byte[] rrq = new String("RRQ").getBytes();
-//		byte[] ack = new String("\0\1").getBytes();
-//		this.envoyer(rrq,  adresseDistante);
-//		FileOutputStream fichier = new FileOutputStream (ficherLocal); // crée un fichier à l'emplacement de fichierLocal
-//		int compteur = 1;
-//		while (true) {
-//			byte[] reception = reception();
-//			if (reception.length != 0) { // Si succès
-//				this.envoyer(this.makeACK(bloc), adresseDistante); // TODO
-//				if (compteur == this.DATA) {
-//					compteur++
-//					fichier.write(datas)
-//				}
-//				if (datas.taille < 512) {
-//					break
-//				}
-//			}
-//		}
-//	}
-        
 }
