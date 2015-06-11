@@ -45,6 +45,18 @@ public class Client extends ObjetConnecte {
         this.ds = new DatagramSocket(this.port_c);
     }
 
+//    public byte[] makeACK(short numBloc) {
+//        
+//        
+//        byte[] bytes = ByteBuffer.allocate(2).putShort(numBloc).array();
+//        
+//        String nb = new String(bytes);
+//       
+//        String rrq = "\0\4" + nb;
+//        System.out.println("ack :"+rrq);
+//        return rrq.getBytes();
+//    }
+    
     public byte[] makeACK(short bloc) {
         ByteArrayOutputStream dataStream = new ByteArrayOutputStream(4);
         DataOutputStream dataWriter = new DataOutputStream(dataStream);
@@ -67,6 +79,7 @@ public class Client extends ObjetConnecte {
             dataWriter.writeByte(0);
             dataWriter.writeByte(3);
             dataWriter.writeShort(bloc);
+            System.out.println(Short.SIZE);
             dataWriter.write(datas);
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -221,7 +234,7 @@ public class Client extends ObjetConnecte {
             //Le buffer qui permet de renvoyer des ACK et le RRQ
             byte[] bufferEnvoi;
             int essai = 0;
-
+            
             //Préparation et envoie de la requête de demarrage
             bufferEnvoi = makeRRQ((short) data, nf_distant);
             dp = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, ia, 69);
@@ -249,6 +262,7 @@ public class Client extends ObjetConnecte {
                     //La variable globale data stock le numéro de packet attendu
                     if (numblock == data) {
                         System.out.println(" : Ecriture du packet");
+                        if(data == 127) data = 0;
                         data++;
                         //On récupère les données du 4ème byte jusqu'à la fin du datagrampacket
                         for (int i = 4; i < dpr.getLength(); i++) {
@@ -256,16 +270,14 @@ public class Client extends ObjetConnecte {
                             input.flush();
                         }
                         if (dpr.getLength() < 516) {
-                            fichierComplet = true; //problème de longueur de Datagrampacket, il fait toujours 516 comme il est fixé à cette taille, donc ça s'rrete jamais ...
+                            System.out.println("Packet de taille < 516");
+                            fichierComplet = true;
                         }
                     }
                     bufferEnvoi = makeACK((short) numblock);
-                    
-//        return new String("\0" + "\2" + fichier + "\0" + "octet" + "\0").getBytes();
-//                    bufferEnvoi = new String("\0" + "\4" + "\\" + dpr.getData()[2] + "\\" + dpr.getData()[3]).getBytes();
-                    dp = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, dp.getSocketAddress());
-                    dpr = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, dp.getSocketAddress());
-                    ds.send(dpr);
+                    System.out.println(bufferEnvoi.length);
+                    dp = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, dpr.getSocketAddress());
+                    ds.send(dp);
                     essai = 0;
                 }
                 else if (opcode == 5)
