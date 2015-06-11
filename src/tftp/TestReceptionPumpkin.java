@@ -32,7 +32,7 @@ public class TestReceptionPumpkin extends Client{
 //        String serveur = "2013-10-27_13.34.51.jpeg";
 //        String serveur = "Comte_Mourier.rar";
         String serveur = "test.txt";
-        String local = "C:\\Users\\Adrien_portable\\Desktop\\test1.txt";
+        String local = "C:\\Users\\p1407206\\Desktop\\test1.txt";
         InetAddress ia = null;
         TestReceptionPumpkin test = new TestReceptionPumpkin();
         try {

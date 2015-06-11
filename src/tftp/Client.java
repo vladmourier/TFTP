@@ -46,17 +46,7 @@ public class Client extends ObjetConnecte {
     }
 
     public byte[] makeACK(short bloc) {
-        ByteArrayOutputStream dataStream = new ByteArrayOutputStream(4);
-        DataOutputStream dataWriter = new DataOutputStream(dataStream);
-        try {
-            dataWriter.writeByte(0);
-            dataWriter.writeByte(4);
-            dataWriter.writeShort(bloc);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            System.err.println(dataWriter.toString());
-        }
-        return dataStream.toByteArray();
+    	return new String("\0" + "\4" + bloc).getBytes();
     }
 
     public byte[] makeDATA(short bloc, byte[] datas) {
@@ -92,7 +82,7 @@ public class Client extends ObjetConnecte {
     public ArrayList<byte[]> scinder(FileInputStream FIS, int taille) throws IOException {
         System.out.println("fonction scinder ; availables : " + FIS.available());
         int offset = 0, availables = FIS.available();
-        ArrayList<byte[]> retour = new ArrayList<>();
+        ArrayList<byte[]> retour = new ArrayList<byte[]>();
         byte[] buffer;
         if (availables >= taille) {
             while (FIS.available() >= taille) {
@@ -130,7 +120,7 @@ public class Client extends ObjetConnecte {
         byte[] paquet = null;//Le buffer permettant de recevoir les paquets
         File fichier_local;
         FileInputStream FIS;
-        ArrayList<byte[]> partitions = new ArrayList<>();
+        ArrayList<byte[]> partitions = new ArrayList<byte[]>();
         short bloc = 0, essais = 1;
         boolean envoye = false;
 //Récupération du fichier
@@ -263,7 +253,7 @@ public class Client extends ObjetConnecte {
                     
 //        return new String("\0" + "\2" + fichier + "\0" + "octet" + "\0").getBytes();
 //                    bufferEnvoi = new String("\0" + "\4" + "\\" + dpr.getData()[2] + "\\" + dpr.getData()[3]).getBytes();
-                    dp = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, dp.getSocketAddress());
+                   
                     dpr = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, dp.getSocketAddress());
                     ds.send(dpr);
                     essai = 0;
@@ -287,7 +277,9 @@ public class Client extends ObjetConnecte {
             }
 
             //Temporisation
-            ds.setSoTimeout(3000);
+            UnThread monThread = new UnThread(this, nf_distant, ia);
+            monThread.start();
+            
             input.close();
             ds.close();
             return 0;
