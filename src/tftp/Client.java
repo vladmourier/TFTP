@@ -201,7 +201,6 @@ public class Client extends ObjetConnecte {
         }
         //Ajouter une tempo, fermer le socket
         FIS.close();
-        ds.close();
         return 0;
     }
 
@@ -312,5 +311,9 @@ public class Client extends ObjetConnecte {
         ByteBuffer buff = ByteBuffer.wrap(DATA);
         buff.getShort();
         return buff.getShort();
+    }
+    
+    public void closeSocket() {
+    	ds.close();
     }
 }
