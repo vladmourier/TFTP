@@ -148,7 +148,7 @@ public class Client extends ObjetConnecte {
 //Envoi du WRQ
         while (essais <= 3 && envoye == false) {
             System.out.println("envoi du WRQ");
-            paquet = makeWRQ(filename);
+            paquet = makeWRQ(fichier_local.getName());
             this.ds.send(this.dp = new DatagramPacket(paquet, paquet.length, address, 69));
             paquet = new byte[4];
             this.dp = new DatagramPacket(paquet, paquet.length);
