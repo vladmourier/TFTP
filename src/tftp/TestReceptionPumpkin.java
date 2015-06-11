@@ -28,18 +28,21 @@ public class TestReceptionPumpkin extends Client{
     }
     
     public static void main(String[] args) throws UnsupportedEncodingException, SocketException {
-        File f;
+        int retour;
+//        String serveur = "2013-10-27_13.34.51.jpeg";
+//        String serveur = "Comte_Mourier.rar";
         String serveur = "test.txt";
-        String local = "C:\\Users\\Transports Vivarais\\Desktop\\aa.txt";
+        String local = "C:\\Users\\Adrien_portable\\Desktop\\test1.txt";
         InetAddress ia = null;
         TestReceptionPumpkin test = new TestReceptionPumpkin();
         try {
             ia = InetAddress.getByName(IP_Serveur);
         } catch (UnknownHostException ex) {
+            System.err.println("problème de localhost");
             Logger.getLogger(TestReceptionPumpkin.class.getName()).log(Level.SEVERE, null, ex);
         }
         System.out.println("On va lancer la fonction de reception du fichier");
-        f = test.receiveFile(local, serveur, ia);
+        retour = test.receiveFile(local, serveur, ia);
         System.out.println("Fichier reçu");
     }
 }

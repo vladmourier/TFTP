@@ -23,7 +23,7 @@ public class TFTP {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws SocketException {
-        File f;
+        int retour;
         String serveur = "test.txt";
         String local = "C:\\Users\\Transports Vivarais\\Desktop\\aa.txt";
         InetAddress ia = null;
@@ -34,7 +34,7 @@ public class TFTP {
             Logger.getLogger(TestReceptionPumpkin.class.getName()).log(Level.SEVERE, null, ex);
         }
         System.out.println("On va lancer la fonction de reception du fichier");
-        f = test.receiveFile(local, serveur, ia);
+        retour = test.receiveFile(local, serveur, ia);
         System.out.println("Fichier reçu");
         }
     

@@ -96,9 +96,9 @@ public class Client extends ObjetConnecte {
         byte[] buffer;
         if (availables >= taille) {
             while (FIS.available() >= taille) {
-                System.out.println("offset = " + offset + " ; offset+taille =" + (offset+taille) + " ; " + " ; " + "availables : " + FIS.available());
+                System.out.println("offset = " + offset + " ; offset+taille =" + (offset + taille) + " ; " + " ; " + "availables : " + FIS.available());
                 if (availables - offset <= taille) {
-                    buffer=new byte[availables - offset];
+                    buffer = new byte[availables - offset];
                     FIS.read(buffer);
                     retour.add(buffer);
                 } else {
@@ -107,12 +107,12 @@ public class Client extends ObjetConnecte {
                     retour.add(buffer);
                     offset += taille;
                 }
-                System.out.println("Ajout d'une partition de taille : " + buffer.length );
+                System.out.println("Ajout d'une partition de taille : " + buffer.length);
             }
         }
-            buffer = new byte[FIS.available()];
-            FIS.read(buffer);
-            retour.add(buffer);
+        buffer = new byte[FIS.available()];
+        FIS.read(buffer);
+        retour.add(buffer);
 
         return retour;
     }
@@ -170,7 +170,7 @@ public class Client extends ObjetConnecte {
             System.out.println("fichier découpé en " + partitions.size() + " partitions");
             for (byte[] partition : partitions) {
                 System.out.println("/////////////////Partition");
-                envoye=false;
+                envoye = false;
                 while (essais <= 3 && envoye == false) {
                     envoye = false;
                     System.out.println("j'envoie un paquet de : " + partition.length + " octets");
@@ -203,71 +203,94 @@ public class Client extends ObjetConnecte {
     }
 
 //TODO CHANGER LE TYPE DE RETOUR
-    public File receiveFile(String nf_local, String nf_distant, InetAddress ia) {
+    //bouclage ack à la fin pour stoper les envoie serveurs en cas d'erreurs
+    //fermeture DS
+    //verification longeur packet//gestion précise des erreurs Ok
+    public int receiveFile(String nf_local, String nf_distant, InetAddress ia) {
         try {
-            //Le fichier qui sera renvoyer en fin de fonction
+            //Le fichier a récuperer
             File f = new File(nf_local);
-            //L'objet fichier dans lequel on peut écrire
+            //L'objet dans lequel on peut écrire le fichier
             FileWriter fichier = new FileWriter(f, true);
-            //L'objet buffer qui gère les donnés
+            //L'objet buffer qui gère les donnés à écrire directement dans le ficheir
             BufferedWriter input = new BufferedWriter(fichier);
-            //Le compteur de data reçu, sert pour les numéros de packets
+            //Le compteur de data reçu, sert pour les numéros de packets, commence à 1 car on commence par recevoir data = 1
             short data = 1;
-            //Le booleen de sortie de boucle, un test le passe a faux si le fichier est complet, on n'attend plus de réception
-            boolean complet = false;
+            //Le booleen de sortie de boucle, un test le passe a true si le fichier est complet, on n'attend plus de réception
+            boolean fichierComplet = false;
             //Le buffer qui permet de renvoyer des ACK et le RRQ
-            byte[] buffer;
+            byte[] bufferEnvoi;
+            int essai = 0;
 
             //Préparation et envoie de la requête de demarrage
-            buffer = makeRRQ((short) data, nf_distant);
-            dp = new DatagramPacket(buffer, buffer.length, ia, 69);
+            bufferEnvoi = makeRRQ((short) data, nf_distant);
+            dp = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, ia, 69);
             ds.send(dp);
 
             //Reception du fichier
-            while(complet == false)
-            {
+            while (fichierComplet == false) {
                 DatagramPacket dpr = new DatagramPacket(new byte[516], 516);
+                //ds.setSoTimeout(3000);
                 ds.receive(dpr);
                 //Recupération de l'opcode
                 short opcode = dpr.getData()[0];
                 opcode <<= 8;
                 opcode += dpr.getData()[1];
-                System.out.println(opcode);
+                System.out.print("opcode " + opcode);
 
                 //L'opcode 3 correspond à l'envoie de data depuis le serveur, on va donc les récupérer
-                if(opcode == 3)
-                {
+                if (opcode == 3) {
                     //Recupération du numéro de packet
                     short numblock = dpr.getData()[2];
                     numblock <<= 8;
                     numblock += dpr.getData()[3];
-                    System.out.println(numblock);
-                    
+                    System.out.println(" packet number " + numblock);
+
                     //La variable globale data stock le numéro de packet attendu
-                    if (numblock == data)
-                    {
+                    if (numblock == data) {
+                        System.out.println(" : Ecriture du packet");
                         data++;
                         //On récupère les données du 4ème byte jusqu'à la fin du datagrampacket
-                        for (int i = 4; i < dpr.getLength(); i++)
-                        {
+                        for (int i = 4; i < dpr.getLength(); i++) {
                             input.write(dpr.getData()[i]);
                             input.flush();
                         }
-                        if(dpr.getLength() < 516) complet = true; //problèm de longueur de Datagrampacket, il fait toujours 516 comme il est fixé à cette taille, donc ça s'rrete jamais ...
+                        if (dpr.getLength() < 516) {
+                            fichierComplet = true; //problème de longueur de Datagrampacket, il fait toujours 516 comme il est fixé à cette taille, donc ça s'rrete jamais ...
+                        }
                     }
-                    buffer = makeACK((short)data);
-                    dpr = new DatagramPacket(buffer, buffer.length, dp.getSocketAddress());
+                    bufferEnvoi = makeACK((short) numblock);
+                    
+//        return new String("\0" + "\2" + fichier + "\0" + "octet" + "\0").getBytes();
+//                    bufferEnvoi = new String("\0" + "\4" + "\\" + dpr.getData()[2] + "\\" + dpr.getData()[3]).getBytes();
+                    dp = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, dp.getSocketAddress());
+                    dpr = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, dp.getSocketAddress());
                     ds.send(dpr);
+                    essai = 0;
+                }
+                else if (opcode == 5)
+                {
+                    System.out.println("Une erreur est servenue durant le transfert");
+                    short numblock = dpr.getData()[2];
+                    numblock <<= 8;
+                    numblock += dpr.getData()[3];
+                    
+                    if(numblock == 1)   return -1;  //Fichier non trouvé
+                    if(numblock == 2)   return -2;  //Violation d'accès
+                    return -3;  //autre erreur
+                }
+                else
+                {
+                    essai++;
+                    if (essai > 5)  return 1;   //La communication avec le serveur n'a pas été possible
                 }
             }
-            
+
             //Temporisation
-            ds.setSoTimeout(30000);
-            
-            
+            ds.setSoTimeout(3000);
             input.close();
             ds.close();
-            return f;
+            return 0;
 
         } catch (SocketException ex) {
             Logger.getLogger(ObjetConnecte.class
@@ -279,10 +302,9 @@ public class Client extends ObjetConnecte {
             Logger.getLogger(ObjetConnecte.class
                     .getName()).log(Level.SEVERE, null, ex);
         }
-        return null;
+        return 2;   //autre erreur
     }
-    
-    
+
     public short getBloc(byte[] DATA) {
         ByteBuffer buff = ByteBuffer.wrap(DATA);
         buff.getShort();
