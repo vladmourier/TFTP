@@ -178,7 +178,7 @@ public class Client extends ObjetConnecte {
                     envoye = false;
                     System.out.println("j'envoie un paquet de : " + partition.length + " octets");
                     paquet = this.makeDATA(bloc, partition);
-                    this.dp = new DatagramPacket(paquet, paquet.length, InetAddress.getByName("localhost"), port_s);
+                    this.dp = new DatagramPacket(paquet, paquet.length, address, port_s);
                     this.ds.send(this.dp);
                     paquet = new byte[4];
                     this.dp = new DatagramPacket(paquet, paquet.length);
