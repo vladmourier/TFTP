@@ -49,7 +49,7 @@ public class ObjetConnecte {
     }
 
     public ArrayList<Integer> ScannerUDP(ArrayList<Integer> plage) {
-        ArrayList<Integer> retour = new ArrayList<>();
+        ArrayList<Integer> retour = new ArrayList<Integer>();
         int a = plage.get(0);
         int b = plage.get(1);
         for (int i = a; i <= b; i++) {

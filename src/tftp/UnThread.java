@@ -34,7 +34,11 @@ public class UnThread extends Thread {
         //recuperer le numéro des data envoyées : bloc
         //faire un ACK
         // renvoyer le ACK sur le port
+    	  
+    	
+    	  
         try {
+        	c.ds.setSoTimeout(3000);
             byte[] buffer = new byte[516];
             c.dp = new DatagramPacket(buffer, buffer.length, ia, 69);
             c.ds.receive(c.dp);
@@ -51,10 +55,11 @@ public class UnThread extends Thread {
                 numblock += c.dp.getData()[1];
                 
                 buffer = c.makeACK((short) numblock);
-                c.dp.setData(buffer);
-                c.dp.setLength(buffer.length);
-                c.ds.send(c.dp);
+                DatagramPacket dp2 = new DatagramPacket(buffer, buffer.length, c.dp.getSocketAddress());
+                c.ds.send(dp2);
             }
+            
+          
         } catch (IOException ex) {
             Logger.getLogger(UnThread.class.getName()).log(Level.SEVERE, null, ex);
         }
