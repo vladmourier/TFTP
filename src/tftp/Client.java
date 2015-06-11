@@ -293,7 +293,6 @@ public class Client extends ObjetConnecte {
             monThread.start();
             
             input.close();
-            ds.close();
             return 0;
 
         } catch (SocketException ex) {
