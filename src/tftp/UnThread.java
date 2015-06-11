@@ -63,6 +63,9 @@ public class UnThread extends Thread {
         } catch (IOException ex) {
             Logger.getLogger(UnThread.class.getName()).log(Level.SEVERE, null, ex);
         }
+        finally{
+            c.ds.close();
+        }
 
     }
 
