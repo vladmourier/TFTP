@@ -159,7 +159,7 @@ public byte[] makeACK(short bloc) {
 //Envoi du WRQ
         while (essais <= 3 && envoye == false) {
             System.out.println("envoi du WRQ");
-            paquet = makeWRQ(filename);
+            paquet = makeWRQ(fichier_local.getName());
             this.ds.send(this.dp = new DatagramPacket(paquet, paquet.length, address, 69));
             paquet = new byte[4];
             this.dp = new DatagramPacket(paquet, paquet.length);
@@ -189,7 +189,7 @@ public byte[] makeACK(short bloc) {
                     envoye = false;
                     System.out.println("j'envoie un paquet de : " + partition.length + " octets");
                     paquet = this.makeDATA(bloc, partition);
-                    this.dp = new DatagramPacket(paquet, paquet.length, InetAddress.getByName("localhost"), port_s);
+                    this.dp = new DatagramPacket(paquet, paquet.length, address, port_s);
                     this.ds.send(this.dp);
                     paquet = new byte[4];
                     this.dp = new DatagramPacket(paquet, paquet.length);
