@@ -11,6 +11,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -57,8 +58,18 @@ public class Client extends ObjetConnecte {
 //        return rrq.getBytes();
 //    }
     
-    public byte[] makeACK(short bloc) {
-    	return new String("\0" + "\4" + bloc).getBytes();
+public byte[] makeACK(short bloc) {
+        ByteArrayOutputStream dataStream = new ByteArrayOutputStream(4);
+        DataOutputStream dataWriter = new DataOutputStream(dataStream);
+        try {
+            dataWriter.writeByte(0);
+            dataWriter.writeByte(4);
+            dataWriter.writeShort(bloc);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.err.println(dataWriter.toString());
+        }
+        return dataStream.toByteArray();
     }
 
     public byte[] makeDATA(short bloc, byte[] datas) {
@@ -206,16 +217,15 @@ public class Client extends ObjetConnecte {
 
 //TODO CHANGER LE TYPE DE RETOUR
     //bouclage ack à la fin pour stoper les envoie serveurs en cas d'erreurs
-    //fermeture DS
-    //verification longeur packet//gestion précise des erreurs Ok
+    //fermeture DS correcte
     public int receiveFile(String nf_local, String nf_distant, InetAddress ia) {
         try {
             //Le fichier a récuperer
             File f = new File(nf_local);
             //L'objet dans lequel on peut écrire le fichier
-            FileWriter fichier = new FileWriter(f, true);
+            FileOutputStream fichier = new FileOutputStream(f, true);
             //L'objet buffer qui gère les donnés à écrire directement dans le ficheir
-            BufferedWriter input = new BufferedWriter(fichier);
+            //BufferedWriter input = new BufferedWriter(fichier);
             //Le compteur de data reçu, sert pour les numéros de packets, commence à 1 car on commence par recevoir data = 1
             short data = 1;
             //Le booleen de sortie de boucle, un test le passe a true si le fichier est complet, on n'attend plus de réception
@@ -246,7 +256,7 @@ public class Client extends ObjetConnecte {
                     short numblock = dpr.getData()[2];
                     numblock <<= 8;
                     numblock += dpr.getData()[3];
-                    System.out.println(" packet number " + numblock);
+                    System.out.print(" packet number " + numblock);
 
                     //La variable globale data stock le numéro de packet attendu
                     if (numblock == data) {
@@ -255,8 +265,8 @@ public class Client extends ObjetConnecte {
                         data++;
                         //On récupère les données du 4ème byte jusqu'à la fin du datagrampacket
                         for (int i = 4; i < dpr.getLength(); i++) {
-                            input.write(dpr.getData()[i]);
-                            input.flush();
+                            fichier.write(dpr.getData()[i]);
+                            fichier.flush();
                         }
                         if (dpr.getLength() < 516) {
                             System.out.println("Packet de taille < 516");
@@ -264,7 +274,6 @@ public class Client extends ObjetConnecte {
                         }
                     }
                     bufferEnvoi = makeACK((short) numblock);
-                    System.out.println(bufferEnvoi.length);
                     dp = new DatagramPacket(bufferEnvoi, bufferEnvoi.length, dpr.getSocketAddress());
                     ds.send(dp);
                     essai = 0;
@@ -288,10 +297,10 @@ public class Client extends ObjetConnecte {
             }
 
             //Temporisation
-            UnThread monThread = new UnThread(this, nf_distant, ia);
-            monThread.start();
+//            UnThread monThread = new UnThread(this, nf_distant, ia);
+//            monThread.start();
             
-            input.close();
+            fichier.close();
             return 0;
 
         } catch (SocketException ex) {

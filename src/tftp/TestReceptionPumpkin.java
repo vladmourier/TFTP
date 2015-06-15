@@ -6,7 +6,6 @@
 
 package tftp;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -29,12 +28,13 @@ public class TestReceptionPumpkin extends Client{
     
     public static void main(String[] args) throws UnsupportedEncodingException, SocketException {
         int retour;
-//        String serveur = "2013-10-27_13.34.51.jpeg";
-        String serveur = "Scandinavia.docx";
+//        String serveur = "gros.txt";
+        String serveur = "url.jpg";
 //        String serveur = "test.txt";
-//        String local = "C:\\\\Users\\\\Adrien_portable\\\\Desktop\\\\2013-10-27_13.34.51.jpeg";
-        String local = "C:\\Users\\Adrien_portable\\Desktop\\Scandinavia.docx";
+//        String local = "C:\\\\Users\\\\Adrien_portable\\\\Desktop\\\\gros.txt";
+        String local = "C:\\Users\\Adrien_portable\\Desktop\\url.jpg";
 //        String local = "C:\\Users\\Adrien_portable\\Desktop\\test1.txt";
+        
         InetAddress ia = null;
         TestReceptionPumpkin test = new TestReceptionPumpkin();
         
