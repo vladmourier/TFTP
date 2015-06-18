@@ -264,7 +264,7 @@ public class View {
                 try {
                     System.out.println(txtF_fichierRecevoir.getText());
                     System.out.println(fichierReception.getAbsolutePath());
-					client.receiveFile(fichierReception.getAbsolutePath(), txtF_fichierRecevoir.getText(), InetAddress.getByName(txtF_adrServeur.getText()));
+					client.receiveFile(new String(fichierReception.getAbsolutePath() + "\\" + txtF_fichierRecevoir.getText()), txtF_fichierRecevoir.getText(), InetAddress.getByName(txtF_adrServeur.getText()));
 				} catch (UnknownHostException e1) {
 					System.out.println("Erreur d'adresse");
 				}
